@@ -1,0 +1,13 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+Games.csv <- read.csv("data.csv", header = T)
+attach(Games.csv)
+model.lm <- lm(log(stsp_owners) ~ meta_score + meta_uscore + full_price)
+summary(model.lm)
+```
