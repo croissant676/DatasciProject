@@ -15,3 +15,4 @@ for game in json_data:
         first = False
     csv_writer.writerow(game.values())
 
+csv_file.close()
