@@ -1,7 +1,7 @@
 import csv
 import json
 
-json_file = open('C:\\Users\\crois\\Downloads\\steamdb.json', 'r', encoding='utf-8')
+json_file = open('C:\\Users\\aidan\\Downloads\\steamdb.min.json', 'r', encoding='utf-8')
 json_data = json.load(json_file)
 
 csv_file = open('data.csv', 'w', encoding='utf-8')
@@ -17,7 +17,7 @@ csv_writer.writerow(['steam_id',
                      'owner_count',
                      'full_price',
                      'achievements',
-                     'is_windows',
+                     'is_mac',
                      'language_count',
                      'tag_count',
                      'is_multiplayer'
@@ -39,7 +39,8 @@ for game in json_data:
     platforms = game['platforms']
     if platforms is None:
         continue
-    if 'windows' in map(lambda x: x.lower(), platforms):
+    platforms = platforms.split(',')
+    if 'mac' in map(lambda x: x.lower(), platforms):
         data_list.append('T')
     else:
         data_list.append('F')
@@ -56,7 +57,7 @@ for game in json_data:
         data_list.append('T')
     else:
         data_list.append('F')
-    print(data_list)
+    [print(data.encode("utf-8")) for data in data_list if isinstance(data, str)]
     csv_writer.writerow(data_list)
 
 csv_file.close()

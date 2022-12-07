@@ -1,18 +1,28 @@
----
-title: "R Notebook"
-output: html_notebook
----
-
-
 
 ```{r}
-print("test")
-games_csv <- read.csv("data.csv", header = T)
-games_csv$Free <- games_csv$CurrentPrice == 0
-plot(games_csv$meta_score, games_csv$stsp_owners, xlab = "Meta Score", ylab = "Steam Owners", main = "Meta Score vs Steam Owners")
-```
-```{r}
+# read from formatted.csv
 
-model.lm <- lm(log(stsp_owners) ~ meta_score + meta_uscore + full_price, data = games_csv)
+data <-  read.csv("formatted.csv", header = TRUE, sep = ",")
+# best subsets to find the best model predicting the owner_count
+# all the other variables except steam_id
+
+library(leaps)
+# convert is_multiplayer from T or F to 1 or 0
+data$is_multiplayer <- as.numeric(data$is_multiplayer)
+data$is_mac <- as.numeric(data$is_mac)
+#make sure to run install.packages("leaps") before using this library
+#we need the library for the regsubsets() function,
+#this function produces an exhaustive search for the best subsets of the full model,
+#you can make it go forwards or backwards
+library(leaps)
+out <- summary(regsubsets(log(owner_count) ~ . + log(tag_count), data = data[,c(3,4,5,6,7,8,9,10,11,12,13)], nbest = 2, really.big = F))
+Subsets<-out$which #tells us which subsets are used (T/F)
+R2<-round(100*out$rsq,1) #storing a list of all R2 percentages
+R2adj<-round(100*out$adjr2,1) #storing a list of all R2adj percentages
+Cp<-round(out$cp,1) #storing a list of all Mallows' Cp values
+stuff <- cbind(Subsets,R2,R2adj,Cp) #output a dataframe showing all the info we just collected
+print(stuff[R2adj == max(R2adj),])
+model.lm <- lm(log(owner_count) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data)
 summary(model.lm)
+plot(model.lm)
 ```
