@@ -6,8 +6,13 @@ output: html_notebook
 
 
 ```{r}
-Games.csv <- read.csv("data.csv", header = T)
-attach(Games.csv)
-model.lm <- lm(log(stsp_owners) ~ meta_score + meta_uscore + full_price)
+print("test")
+games_csv <- read.csv("data.csv", header = T)
+games_csv$Free <- games_csv$CurrentPrice == 0
+plot(games_csv$meta_score, games_csv$stsp_owners, xlab = "Meta Score", ylab = "Steam Owners", main = "Meta Score vs Steam Owners")
+```
+```{r}
+
+model.lm <- lm(log(stsp_owners) ~ meta_score + meta_uscore + full_price, data = games_csv)
 summary(model.lm)
 ```
