@@ -1,4 +1,6 @@
 
+
+
 ```{r}
 # read from formatted.csv
 
@@ -13,16 +15,131 @@ data$is_mac <- as.numeric(data$is_mac)
 #make sure to run install.packages("leaps") before using this library
 #we need the library for the regsubsets() function,
 #this function produces an exhaustive search for the best subsets of the full model,
-#you can make it go forwards or backwards
-library(leaps)
-out <- summary(regsubsets(log(owner_count) ~ . + log(tag_count), data = data[,c(3,4,5,6,7,8,9,10,11,12,13)], nbest = 2, really.big = F))
+#you can make it go forwards or backwards\
+# library(leaps)
+# out <- summary(regsubsets(log(owner_count) ~ . + log(tag_count), data = data[,c(3,4,5,6,7,8,9,10,11,12,13)], nbest = 2, really.big = F))
+# Subsets<-out$which #tells us which subsets are used (T/F)
+# R2<-round(100*out$rsq,1) #storing a list of all R2 percentages
+# R2adj<-round(100*out$adjr2,1) #storing a list of all R2adj percentages
+# Cp<-round(out$cp,1) #storing a list of all Mallows' Cp values
+# stuff <- cbind(Subsets,R2,R2adj,Cp) #output a dataframe showing all the info we just collected
+# print(stuff[R2adj == max(R2adj),])
+model.lm <- lm(log(owner_count) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data)
+
+summary(model.lm)
+plot(model.lm)
+```
+
+
+```{r eval = F}
+originalF <- data.frame(summary(model.lm)$fstatistic)[1,1] # get orig F-stat
+print(originalF)
+N <- 5000 # get 5000 perms
+permFstat <- as.numeric(0) # init
+for (i in 1:N) {
+  dummy.lm <- lm(sample(log(owner_count)) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data) # randomize Candy, match with predictors
+  permFstat[i] <-data.frame(summary(dummy.lm)$fstatistic)[1,1] # store fstat of perm
+}
+hist(permFstat, main="Randomized F-statistic for a randomization test on our model", xlab="ANOVA F-statistic for 5000 samples")
+p.randomization <- sum(permFstat > originalF)/N
+print(p.randomization)
+N <- 5000
+summary(model.lm)
+ocoeff1 <- model.lm$coefficients[3] # store igdb_rating
+ocoeff2 <- model.lm$coefficients[2] # store steam_rating
+ocoeff3 <- model.lm$coefficients[4] # store metacritic_score
+ocoeff4 <- model.lm$coefficients[5] # store achievements
+ocoeff5 <- model.lm$coefficients[6] # store language_count
+ocoeff6 <- model.lm$coefficients[7] # store tag_count
+ocoeff7 <- model.lm$coefficients[8] # store is_multiplayer
+ocoeff8 <- model.lm$coefficients[9] # store log(tag_count)
+origsdErr <- summary(model.lm)$sigma  # store original sd of resids
+coeff1 <- as.numeric(0)
+coeff1sd <- as.numeric(0)
+coeff2 <- as.numeric(0)
+coeff2sd <- as.numeric(0)
+coeff3 <- as.numeric(0)
+coeff3sd <- as.numeric(0)
+coeff4 <- as.numeric(0)
+coeff4sd <- as.numeric(0)
+coeff5 <- as.numeric(0)
+coeff5sd <- as.numeric(0)
+coeff6 <- as.numeric(0)
+coeff6sd <- as.numeric(0)
+coeff7 <- as.numeric(0)
+coeff7sd <- as.numeric(0)
+coeff8 <- as.numeric(0)
+coeff8sd <- as.numeric(0)
+sdErr <- as.numeric(0)
+for (i in 1:N){
+  dummy<-data[sample(1:nrow(data),nrow(data),replace=TRUE),]
+  #creating a linear model
+  dummy.lm <- lm(log(owner_count) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = dummy) # make model
+  # store coefs and resid for each permutation
+  coeff1[i] <- dummy.lm$coefficients[2]
+  coeff1sd[i] <- summary(dummy.lm)$coefficients[2, 2]
+  coeff2[i] <- dummy.lm$coefficients[3]
+  coeff2sd[i] <- summary(dummy.lm)$coefficients[3, 2]
+  coeff3[i] <- dummy.lm$coefficients[4]
+  coeff3sd[i] <- summary(dummy.lm)$coefficients[4, 2]
+  coeff4[i] <- dummy.lm$coefficients[5]
+  coeff4sd[i] <- summary(dummy.lm)$coefficients[5, 2]
+  coeff5[i] <- dummy.lm$coefficients[6]
+  coeff5sd[i] <- summary(dummy.lm)$coefficients[6, 2]
+  coeff6[i] <- dummy.lm$coefficients[7]
+  coeff6sd[i] <- summary(dummy.lm)$coefficients[7, 2]
+  coeff7[i] <- dummy.lm$coefficients[8]
+  coeff7sd[i] <- summary(dummy.lm)$coefficients[8, 2]
+  coeff8[i] <- dummy.lm$coefficients[9]
+  coeff8sd[i] <- summary(dummy.lm)$coefficients[9, 2]
+  sdErr[i] <- summary(dummy.lm)$sigma
+}
+hist(coeff1, main="Bootstrap for steam_rating coefficient", xlab="Coefficient on the steam_rating predictor")
+hist(coeff2, main="Bootstrap for igdb_rating coefficient", xlab="Coefficient on igdb_rating predictor")
+hist(coeff3, main="Bootstrap for metacritic_rating coefficient", xlab="Coefficient on the metacritic_rating predictor")
+hist(coeff4, main="Bootstrap for achievements coefficient", xlab="Coefficient on achievements coefficient predictor")
+hist(coeff5, main="Bootstrap for language coefficient", xlab="Coefficient on the language predictor")
+hist(coeff6, main="Bootstrap for tag_count coefficient", xlab="Coefficient on tag_count predictor")
+hist(coeff7, main="Bootstrap for is_multiplayer coefficient", xlab="Coefficient on the is_multiplayer predictor")
+hist(coeff8, main="Bootstrap for log(tag_count) coefficient", xlab="Coefficient on log(tag_count) predictor")
+hist(sdErr, main="Bootstrap for standard error of regression", xlab="Standard error")
+detach()
+TStar.sdErr <- (sdErr - origsdErr)/sd(sdErr)
+paste0("steam_rating Confint: (", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.975) * sd(coeff1), ", ", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.025) * sd(coeff1), ")")
+paste0("igdb_rating Confint: (", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.975) * sd(coeff2), ", ", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.025) * sd(coeff2), ")")
+paste0("metacritic_score Confint: (", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.975) * sd(coeff3), ", ", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.025) * sd(coeff3), ")")
+paste0("achievement Confint: (", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.975) * sd(coeff4), ", ", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.025) * sd(coeff4), ")")
+paste0("language_count Confint: (", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.975) * sd(coeff5), ", ", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.025) * sd(coeff5), ")")
+paste0("tag_count Confint: (", ocoeff6 - quantile((coeff6 - ocoeff6)/coeff6sd, 0.975) * sd(coeff6), ", ", ocoeff6 - quantile((coeff6 - ocoeff6)/coeff6sd, 0.025) * sd(coeff6), ")")
+paste0("is_multiplayer Confint: (", ocoeff7 - quantile((coeff7 - ocoeff7)/coeff7sd, 0.975) * sd(coeff7), ", ", ocoeff7 - quantile((coeff7 - ocoeff7)/coeff7sd, 0.025) * sd(coeff7), ")")
+paste0("log(tag_count) Confint: (", ocoeff8 - quantile((coeff8 - ocoeff8)/coeff8sd, 0.975) * sd(coeff8), ", ", ocoeff8 - quantile((coeff8 - ocoeff8)/coeff8sd, 0.025) * sd(coeff8), ")")
+paste0("Standard Error Confint: (", origsdErr - quantile(TStar.sdErr, 0.975) * sd(sdErr), ", ", origsdErr - quantile(TStar.sdErr, 0.025) * sd(sdErr), ")")
+detach()
+```
+
+
+```{r}
+model.ls <- ls.diag(model.lm)
+unusuals <- data.frame(Name = data$name)
+unusuals$studResid <- model.ls$stud.res
+unusuals$Leverage <- model.ls$hat
+unusuals$Cooks <- model.ls$cooks
+print(unusuals[unusuals$studResid > 2,])
+print(unusuals[unusuals$Leverage > 9 * 2 / nrow(unusuals),])
+print(unusuals[unusuals$Cooks > 0.5,])
+```
+```{r}
+plot(model.lm$residuals ~ model.lm$fitted.values)
+abline(lm(model.lm$residuals ~ model.lm$fitted.values))
+```
+
+```{r eval = F}
+out <- summary(regsubsets(full_price ~ . + log(tag_count) + .:., data = data[,c(3,4,5,6,7,8,9,10,11,12,13)], nbest = 2, really.big = T))
 Subsets<-out$which #tells us which subsets are used (T/F)
 R2<-round(100*out$rsq,1) #storing a list of all R2 percentages
 R2adj<-round(100*out$adjr2,1) #storing a list of all R2adj percentages
 Cp<-round(out$cp,1) #storing a list of all Mallows' Cp values
 stuff <- cbind(Subsets,R2,R2adj,Cp) #output a dataframe showing all the info we just collected
+print(stuff)
 print(stuff[R2adj == max(R2adj),])
-model.lm <- lm(log(owner_count) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data)
-summary(model.lm)
-plot(model.lm)
 ```
