@@ -24,10 +24,11 @@ data$is_mac <- as.numeric(data$is_mac)
 # Cp<-round(out$cp,1) #storing a list of all Mallows' Cp values
 # stuff <- cbind(Subsets,R2,R2adj,Cp) #output a dataframe showing all the info we just collected
 # print(stuff[R2adj == max(R2adj),])
-model.lm <- lm(log(owner_count) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data)
+model.lm <- lm(log(owner_count) ~ steam_rating:is_multiplayer + metacritic_score + achievements + sqrt(language_count) + I(tag_count^2), data = data)
 
 summary(model.lm)
 plot(model.lm)
+hist(model.lm$residuals, main = "Histogram of residuals", xlab = "Residuals")
 ```
 
 
@@ -37,7 +38,7 @@ print(originalF)
 N <- 5000 # get 5000 perms
 permFstat <- as.numeric(0) # init
 for (i in 1:N) {
-  dummy.lm <- lm(sample(log(owner_count)) ~ steam_rating + igdb_rating + metacritic_score + achievements + language_count + tag_count + is_multiplayer + log(tag_count), data = data) # randomize Candy, match with predictors
+  dummy.lm <- lm(sample(log(owner_count)) ~ steam_rating:is_multiplayer + metacritic_score + achievements + sqrt(language_count) + I(tag_count^2),, data = data) # randomize Candy, match with predictors
   permFstat[i] <-data.frame(summary(dummy.lm)$fstatistic)[1,1] # store fstat of perm
 }
 hist(permFstat, main="Randomized F-statistic for a randomization test on our model", xlab="ANOVA F-statistic for 5000 samples")
@@ -86,35 +87,21 @@ for (i in 1:N){
   coeff4sd[i] <- summary(dummy.lm)$coefficients[5, 2]
   coeff5[i] <- dummy.lm$coefficients[6]
   coeff5sd[i] <- summary(dummy.lm)$coefficients[6, 2]
-  coeff6[i] <- dummy.lm$coefficients[7]
-  coeff6sd[i] <- summary(dummy.lm)$coefficients[7, 2]
-  coeff7[i] <- dummy.lm$coefficients[8]
-  coeff7sd[i] <- summary(dummy.lm)$coefficients[8, 2]
-  coeff8[i] <- dummy.lm$coefficients[9]
-  coeff8sd[i] <- summary(dummy.lm)$coefficients[9, 2]
   sdErr[i] <- summary(dummy.lm)$sigma
 }
-hist(coeff1, main="Bootstrap for steam_rating coefficient", xlab="Coefficient on the steam_rating predictor")
-hist(coeff2, main="Bootstrap for igdb_rating coefficient", xlab="Coefficient on igdb_rating predictor")
-hist(coeff3, main="Bootstrap for metacritic_rating coefficient", xlab="Coefficient on the metacritic_rating predictor")
-hist(coeff4, main="Bootstrap for achievements coefficient", xlab="Coefficient on achievements coefficient predictor")
-hist(coeff5, main="Bootstrap for language coefficient", xlab="Coefficient on the language predictor")
-hist(coeff6, main="Bootstrap for tag_count coefficient", xlab="Coefficient on tag_count predictor")
-hist(coeff7, main="Bootstrap for is_multiplayer coefficient", xlab="Coefficient on the is_multiplayer predictor")
-hist(coeff8, main="Bootstrap for log(tag_count) coefficient", xlab="Coefficient on log(tag_count) predictor")
-hist(sdErr, main="Bootstrap for standard error of regression", xlab="Standard error")
+hist(coeff1, main="Bootstrap for metacritic_score coefficient", xlab="Coefficient on the metacritic_score predictor")
+hist(coeff2, main="Bootstrap for achievement coefficient", xlab="Coefficient on achievement predictor")
+hist(coeff3, main="Bootstrap for sqrt(language_count) coefficient", xlab="Coefficient on the sqrt(language_count) predictor")
+hist(coeff4, main="Bootstrap for tag_count^2 coefficient", xlab="Coefficient on tag_count^2 coefficient predictor")
+hist(coeff5, main="Bootstrap for steam_rant:is_multiplayer coefficient", xlab="Coefficient on the steam_rant:is_multiplayer predictor")
 detach()
 TStar.sdErr <- (sdErr - origsdErr)/sd(sdErr)
-paste0("steam_rating Confint: (", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.975) * sd(coeff1), ", ", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.025) * sd(coeff1), ")")
-paste0("igdb_rating Confint: (", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.975) * sd(coeff2), ", ", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.025) * sd(coeff2), ")")
-paste0("metacritic_score Confint: (", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.975) * sd(coeff3), ", ", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.025) * sd(coeff3), ")")
-paste0("achievement Confint: (", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.975) * sd(coeff4), ", ", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.025) * sd(coeff4), ")")
-paste0("language_count Confint: (", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.975) * sd(coeff5), ", ", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.025) * sd(coeff5), ")")
-paste0("tag_count Confint: (", ocoeff6 - quantile((coeff6 - ocoeff6)/coeff6sd, 0.975) * sd(coeff6), ", ", ocoeff6 - quantile((coeff6 - ocoeff6)/coeff6sd, 0.025) * sd(coeff6), ")")
-paste0("is_multiplayer Confint: (", ocoeff7 - quantile((coeff7 - ocoeff7)/coeff7sd, 0.975) * sd(coeff7), ", ", ocoeff7 - quantile((coeff7 - ocoeff7)/coeff7sd, 0.025) * sd(coeff7), ")")
-paste0("log(tag_count) Confint: (", ocoeff8 - quantile((coeff8 - ocoeff8)/coeff8sd, 0.975) * sd(coeff8), ", ", ocoeff8 - quantile((coeff8 - ocoeff8)/coeff8sd, 0.025) * sd(coeff8), ")")
+paste0("metacritic_score Confint: (", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.975) * sd(coeff1), ", ", ocoeff1 - quantile((coeff1 - ocoeff1)/coeff1sd, 0.025) * sd(coeff1), ")")
+paste0("achievement Confint: (", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.975) * sd(coeff2), ", ", ocoeff2 - quantile((coeff2 - ocoeff2)/coeff2sd, 0.025) * sd(coeff2), ")")
+paste0("sqrt(language_count) Confint: (", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.975) * sd(coeff3), ", ", ocoeff3 - quantile((coeff3 - ocoeff3)/coeff3sd, 0.025) * sd(coeff3), ")")
+paste0("tag_count^2 Confint: (", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.975) * sd(coeff4), ", ", ocoeff4 - quantile((coeff4 - ocoeff4)/coeff4sd, 0.025) * sd(coeff4), ")")
+paste0("steam_rant:is_multiplayer Confint: (", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.975) * sd(coeff5), ", ", ocoeff5 - quantile((coeff5 - ocoeff5)/coeff5sd, 0.025) * sd(coeff5), ")")
 paste0("Standard Error Confint: (", origsdErr - quantile(TStar.sdErr, 0.975) * sd(sdErr), ", ", origsdErr - quantile(TStar.sdErr, 0.025) * sd(sdErr), ")")
-detach()
 ```
 
 
@@ -124,9 +111,14 @@ unusuals <- data.frame(Name = data$name)
 unusuals$studResid <- model.ls$stud.res
 unusuals$Leverage <- model.ls$hat
 unusuals$Cooks <- model.ls$cooks
-print(unusuals[unusuals$studResid > 2,])
-print(unusuals[unusuals$Leverage > 9 * 2 / nrow(unusuals),])
-print(unusuals[unusuals$Cooks > 0.5,])
+studResid <- unusuals[abs(unusuals$studResid) > 2,]
+Leverage <- unusuals[unusuals$Leverage > 6 * 2 / nrow(unusuals),]
+Cooks <- unusuals[unusuals$Cooks > 0.5,]
+print(studResid[order(studResid$studResid),])
+print(Leverage[order(Leverage$Leverage),])
+print(Cooks[order(Cooks$Cooks),])
+library(dplyr)
+inner_join(studResid, Leverage)
 ```
 ```{r}
 plot(model.lm$residuals ~ model.lm$fitted.values)
@@ -143,3 +135,5 @@ stuff <- cbind(Subsets,R2,R2adj,Cp) #output a dataframe showing all the info we 
 print(stuff)
 print(stuff[R2adj == max(R2adj),])
 ```
+
+$\begin{align*} \ln(owner\_count) = &  8.072 + 0.02778 \cdot metacritic\_score + 0.002826 \cdot achievements +  \\ &  0.2393 \cdot \sqrt{language\_count} + 0.005517 \cdot {tag\_count} ^ 2 + 0.007496 \cdot steam\_rating \cdot is\_multiplayer \end{align*}$
